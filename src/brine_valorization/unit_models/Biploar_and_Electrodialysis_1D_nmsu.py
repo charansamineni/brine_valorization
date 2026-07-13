@@ -58,7 +58,7 @@ from idaes.core.util.constants import Constants
 from enum import Enum
 
 from watertap.core import ControlVolume1DBlock, InitializationMixin
-from brackish_valorization_reaktoro.costing.bipolar_electrodialysis_costing import (
+from brine_valorization.costing.bipolar_electrodialysis_costing import (
     cost_bipolar_electrodialysis,
 )
 

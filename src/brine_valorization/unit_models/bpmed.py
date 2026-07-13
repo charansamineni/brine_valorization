@@ -1,12 +1,7 @@
-from xml.parsers.expat import model
-
 from reaktoro_enabled_watertap.utils.watertap_flowsheet_block import (
     WaterTapFlowsheetBlockData,
 )
 from idaes.core.util.initialization import propagate_state
-from reaktoro_enabled_watertap.utils.reaktoro_utils import (
-    ReaktoroOptionsContainer,
-)
 from watertap.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from pyomo.environ import (
@@ -31,10 +26,10 @@ from pyomo.environ import (
 )
 from pyomo.common.config import ConfigValue
 
-from brackish_valorization_reaktoro.property_models.mcas_with_enthalpy import (
+from brine_valorization.property_models.mcas_with_enthalpy import (
     MCASWEParameterBlock,
 )
-from brackish_valorization_reaktoro.unit_models.Biploar_and_Electrodialysis_1D_nmsu import (
+from brine_valorization.unit_models.Biploar_and_Electrodialysis_1D_nmsu import (
     Bipolar_and_Electrodialysis1D,
     ElectricalOperationMode,
     LimitingCurrentDensitybpemMethod,
@@ -54,7 +49,6 @@ from idaes.models.unit_models import (
 )
 from reaktoro_enabled_watertap.utils import scale_utils as scu
 
-from reaktoro_pse.reaktoro_block import ReaktoroBlock
 from pyomo.network import Arc
 
 from idaes.models.unit_models import (
@@ -68,7 +62,10 @@ from idaes.models.unit_models import (
     HeatExchangerFlowPattern,
 )
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
-from brackish_valorization_reaktoro.unit_models.multi_comp_mvc import MultiCompMVC
+try:
+    from brackish_valorization_reaktoro.unit_models.multi_comp_mvc import MultiCompMVC
+except ImportError:
+    MultiCompMVC = None
 
 __author__ = "Alexander V. Dudchenko"
 

@@ -1,13 +1,11 @@
-from brackish_valorization_reaktoro.costing.valorization_costing_block import (
+from brine_valorization.costing.valorization_costing_block import (
     ValorizationCostingBlock,
 )
-from brackish_valorization_reaktoro.unit_models.bpmed import (
+from brine_valorization.unit_models.bpmed import (
     BPMED,
 )
 
-from reaktoro_pse.core.util_classes.cyipopt_solver import (
-    get_cyipopt_watertap_solver,
-)
+from watertap.core.solvers import get_solver
 from pyomo.environ import (
     TransformationFactory,
     assert_optimal_termination,
@@ -32,18 +30,13 @@ from idaes.core import (
 from reaktoro_enabled_watertap.unit_models.multi_comp_feed_unit import (
     MultiCompFeed,
 )
-from brackish_valorization_reaktoro.property_models.mcas_with_enthalpy import (
+from brine_valorization.property_models.mcas_with_enthalpy import (
     MCASWEParameterBlock,
 )
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
     DensityCalculation,
 )
-from reaktoro_enabled_watertap.water_sources.source_water_importer import (
-    get_source_water_data,
-)
-
-from watertap.costing import WaterTAPCosting
 from idaes.core.util.model_statistics import degrees_of_freedom
 import sys
 
@@ -51,8 +44,6 @@ sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
 
 from watertap.property_models.water_prop_pack import WaterParameterBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-
 from reaktoro_enabled_watertap.utils import scale_utils as scu
 import numpy as np
 
@@ -398,7 +389,9 @@ def report(m):
 
 
 def solve_model(m, **kwargs):
-    solver = get_cyipopt_watertap_solver(linear_solver="ma27", max_iter=5000)
+    # Replaced get_cyipopt_watertap_solver(linear_solver="ma27", max_iter=5000) from reaktoro_pse.
+    # If convergence is poor, consider switching back to the cyipopt solver with MA27.
+    solver = get_solver(options={"max_iter": 5000})
     result = solver.solve(m, tee=True)
     report(m)
 
