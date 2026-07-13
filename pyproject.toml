@@ -1,0 +1,30 @@
+[build-system]
+requires = [
+    "setuptools >= 64",
+    "setuptools_scm >= 7",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brine_valorization"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "pyomo",
+    "idaes-pse>=2.5.0",
+    "watertap>=1.0.0",
+    "reaktoro-pse @ git+https://github.com/watertap-org/reaktoro-pse.git",
+    "parameter-sweep @ git+https://github.com/watertap-org/parameter-sweep.git",
+    "reaktoro_enabled_watertap @ git+https://github.com/watertap-org/reaktoro_enabled_watertap.git",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "analysis: marks tests as analysis (deselect with '-m \"not analysis\"')",
+    "flowsheets: marks tests as flowsheets (deselect with '-m \"not flowsheets\"')",
+    "core: marks tests as core (deselect with '-m \"not core\"')",
+    "component: marks test component (deselect with '-m \"not core\"')",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
