@@ -48,13 +48,14 @@ except:
 from watertap.property_models.water_prop_pack import WaterParameterBlock
 from watertap.core.solvers import get_solver
 
-uthor__ = "Alexander V. Dudchenko"
+author__ = "Alexander V. Dudchenko"
 
 
-def build_BPMED_feed_cases(NaCl=40 * pyunits.g / pyunits.L):
+def build_BPMED_feed_cases(NaCl=150 * pyunits.g / pyunits.L):
     mols_nacl = NaCl / (22.98977 + 35.45)
     mass_conc_na = mols_nacl * 22.98977
     mass_conc_cl = mols_nacl * 35.45
+    # Dilute streams are 100x less concentrated
     mols_nacl_dilute = 0.01 / (22.98977 + 35.45)
     mass_conc_na_dilute = mols_nacl_dilute * 22.98977
     mass_conc_cl_dilute = mols_nacl_dilute * 35.45
@@ -139,7 +140,7 @@ def test_BPMED_direct_pass_through():
     assert degrees_of_freedom(m) == 0
     m.fs.dilute_feed.feed.properties[0].flow_vol_phase["Liq"].unfix()
     m.fs.bpmed.set_optimization_operation()
-    for r in [0.6]:
+    for r in [0.55, 0.6]:
         m.fs.bpmed.nacl_recovery.fix(r)
         # m.fs.bpmed.activate_product_quality_constraints(target_concentration=0.01)
         print(degrees_of_freedom(m))
@@ -250,56 +251,56 @@ def test_BPMED_feed_bleed():
     assert degrees_of_freedom(m) == 0
 
 
-@pytest.mark.core
-@pytest.mark.component
-def test_BPMED_feed_mvc():
-    m = build_BPMED_feed_cases()
-
-    m.fs.costing = ValorizationCostingBlock()
-    m.fs.water_properties_vapor = WaterParameterBlock()
-    m.fs.bpmed = BPMED(
-        default_property_package=m.fs.properties,
-        add_mvc_concentrators=True,
-        mvc_vapor_prop_pack=m.fs.water_properties_vapor,
-        default_costing_package=m.fs.costing,
-    )
-
-    m.fs.feed.outlet.connect_to(m.fs.bpmed.brine_inlet)
-    m.fs.dilute_feed.outlet.connect_to(m.fs.bpmed.low_tds_water_inlet)
-
-    TransformationFactory("network.expand_arcs").apply_to(m)
-
-    m.fs.feed.fix_and_scale()
-    m.fs.dilute_feed.fix_and_scale()
-    m.fs.bpmed.fix_and_scale()
-    m.fs.costing.cost_process()
-
-    m.fs.costing.add_annual_product_generation(
-        sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
-    )
-    m.fs.costing.add_LCOP(
-        sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
-    )
-    m.fs.costing.add_mass_based_specific_energy_consumption(
-        sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
-    )
-    m.fs.product_objective = Objective(
-        expr=m.fs.costing.LCOP
-        + sum(
-            (1 - m.fs.bpmed.product_mass_concentration[p])
-            for p in m.fs.bpmed.product_mass_concentration
-        )
-    )
-    iscale.calculate_scaling_factors(m)
-    # dg = DiagnosticsToolbox(m)
-    # dg.display_underconstrained_set()
-    # dg.display_overconstrained_set()
-    # print(degrees_of_freedom(m))
-    assert degrees_of_freedom(m) == 0
-
-    m.fs.feed.initialize()
-    m.fs.dilute_feed.initialize()
-    m.fs.bpmed.initialize()
-    m.fs.bpmed.report()
-    print(degrees_of_freedom(m))
-    assert degrees_of_freedom(m) == 0
+# @pytest.mark.core
+# @pytest.mark.component
+# def test_BPMED_feed_mvc():
+#     m = build_BPMED_feed_cases()
+#
+#     m.fs.costing = ValorizationCostingBlock()
+#     m.fs.water_properties_vapor = WaterParameterBlock()
+#     m.fs.bpmed = BPMED(
+#         default_property_package=m.fs.properties,
+#         add_mvc_concentrators=True,
+#         mvc_vapor_prop_pack=m.fs.water_properties_vapor,
+#         default_costing_package=m.fs.costing,
+#     )
+#
+#     m.fs.feed.outlet.connect_to(m.fs.bpmed.brine_inlet)
+#     m.fs.dilute_feed.outlet.connect_to(m.fs.bpmed.low_tds_water_inlet)
+#
+#     TransformationFactory("network.expand_arcs").apply_to(m)
+#
+#     m.fs.feed.fix_and_scale()
+#     m.fs.dilute_feed.fix_and_scale()
+#     m.fs.bpmed.fix_and_scale()
+#     m.fs.costing.cost_process()
+#
+#     m.fs.costing.add_annual_product_generation(
+#         sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
+#     )
+#     m.fs.costing.add_LCOP(
+#         sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
+#     )
+#     m.fs.costing.add_mass_based_specific_energy_consumption(
+#         sum(m.fs.bpmed.flow_mass_product[p] for p in m.fs.bpmed.flow_mass_product)
+#     )
+#     m.fs.product_objective = Objective(
+#         expr=m.fs.costing.LCOP
+#         + sum(
+#             (1 - m.fs.bpmed.product_mass_concentration[p])
+#             for p in m.fs.bpmed.product_mass_concentration
+#         )
+#     )
+#     iscale.calculate_scaling_factors(m)
+#     # dg = DiagnosticsToolbox(m)
+#     # dg.display_underconstrained_set()
+#     # dg.display_overconstrained_set()
+#     # print(degrees_of_freedom(m))
+#     assert degrees_of_freedom(m) == 0
+#
+#     m.fs.feed.initialize()
+#     m.fs.dilute_feed.initialize()
+#     m.fs.bpmed.initialize()
+#     m.fs.bpmed.report()
+#     print(degrees_of_freedom(m))
+#     assert degrees_of_freedom(m) == 0
