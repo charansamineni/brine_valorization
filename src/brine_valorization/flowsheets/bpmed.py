@@ -1,13 +1,11 @@
-from brackish_valorization_reaktoro.costing.valorization_costing_block import (
+from brine_valorization.costing.valorization_costing_block import (
     ValorizationCostingBlock,
 )
-from brackish_valorization_reaktoro.unit_models.bpmed import (
+from brine_valorization.unit_models.bpmed import (
     BPMED,
 )
 
-from reaktoro_pse.core.util_classes.cyipopt_solver import (
-    get_cyipopt_watertap_solver,
-)
+from watertap.core.solvers import get_solver
 from pyomo.environ import (
     TransformationFactory,
     assert_optimal_termination,
@@ -32,18 +30,13 @@ from idaes.core import (
 from reaktoro_enabled_watertap.unit_models.multi_comp_feed_unit import (
     MultiCompFeed,
 )
-from brackish_valorization_reaktoro.property_models.mcas_with_enthalpy import (
+from brine_valorization.property_models.mcas_with_enthalpy import (
     MCASWEParameterBlock,
 )
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
     DensityCalculation,
 )
-from reaktoro_enabled_watertap.water_sources.source_water_importer import (
-    get_source_water_data,
-)
-
-from watertap.costing import WaterTAPCosting
 from idaes.core.util.model_statistics import degrees_of_freedom
 import sys
 
@@ -51,8 +44,6 @@ sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
 
 from watertap.property_models.water_prop_pack import WaterParameterBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-
 from reaktoro_enabled_watertap.utils import scale_utils as scu
 import numpy as np
 
@@ -111,14 +102,14 @@ def setup_feeds(NaCl=150 * pyunits.g / pyunits.L):
         reconcile_using_reaktoro=False,
         **feed_specs,
     )
-    m.fs.nacl_concentraiton = Var(initialize=value(NaCl), units=pyunits.g / pyunits.L)
-    iscale.set_scaling_factor(m.fs.nacl_concentraiton, 1)
+    m.fs.nacl_concentration = Var(initialize=value(NaCl), units=pyunits.g / pyunits.L)
+    iscale.set_scaling_factor(m.fs.nacl_concentration, 1)
 
     @m.fs.Constraint(["Na_+", "Cl_-"])
     def ion_conc_constraint(b, ion):
         if ion == "Na_+":
 
-            return b.nacl_concentraiton * 22.98977 / (
+            return b.nacl_concentration * 22.98977 / (
                 22.98977 + 35.45
             ) == pyunits.convert(
                 b.feed.feed.properties[0].flow_mass_phase_comp["Liq", ion]
@@ -126,7 +117,7 @@ def setup_feeds(NaCl=150 * pyunits.g / pyunits.L):
                 to_units=pyunits.g / pyunits.L,
             )
         elif ion == "Cl_-":
-            return b.nacl_concentraiton * 35.45 / (22.98977 + 35.45) == pyunits.convert(
+            return b.nacl_concentration * 35.45 / (22.98977 + 35.45) == pyunits.convert(
                 b.feed.feed.properties[0].flow_mass_phase_comp["Liq", ion]
                 / b.feed.feed.properties[0].flow_vol_phase["Liq"],
                 to_units=pyunits.g / pyunits.L,
@@ -166,7 +157,7 @@ def get_constraint_vars(con):
 
 
 def build_bpmed(
-    NaCl=40,
+    NaCl=40, #g/L
     stages=1,
     add_feed_bleed_for_acid_base=True,
     add_feed_bleed_for_brine=True,
@@ -260,19 +251,19 @@ def build_bpmed(
 
 def add_expected_quality_constraint(m):
     m.fs.naoh_min_constraint = Constraint(
-        expr=m.fs.bpmed.product_mass_concentration["NaOH"]
+        expr=m.fs.bpmed.product_mass_concentration["bpmed", "NaOH"]
         == m.fs.feed.feed.properties[0].mass_frac_phase_comp["Liq", "Na_+"] / 2.2
     )
     m.fs.hcl_min_constraint = Constraint(
-        expr=m.fs.bpmed.product_mass_concentration["HCl"]
+        expr=m.fs.bpmed.product_mass_concentration["bpmed", "HCl"]
         == m.fs.feed.feed.properties[0].mass_frac_phase_comp["Liq", "Cl_-"] / 2.2
     )
     # m.fs.naoh_max_constraint = Constraint(
-    #     expr=m.fs.bpmed.product_mass_concentration["NaOH"]
+    #     expr=m.fs.bpmed.product_mass_concentration["bpmed", "NaOH"]
     #     <= m.fs.feed.feed.properties[0].mass_frac_phase_comp["Liq", "Na_+"] / 1.8
     # )
     # m.fs.hcl_max_constraint = Constraint(
-    #     expr=m.fs.bpmed.product_mass_concentration["HCl"]
+    #     expr=m.fs.bpmed.product_mass_concentration["bpmed", "HCl"]
     #     <= m.fs.feed.feed.properties[0].mass_frac_phase_comp["Liq", "Cl_-"] / 1.8
     # )
     iscale.constraint_scaling_transform(m.fs.naoh_min_constraint, 1e-2)
@@ -284,22 +275,29 @@ def add_expected_quality_constraint(m):
 
 def add_equal_quality_constraints(m):
     m.fs.equal_quality_constraint = Constraint(
-        expr=m.fs.bpmed.product_mass_concentration["NaOH"]
-        == m.fs.bpmed.product_mass_concentration["HCl"]
+        expr=m.fs.bpmed.product_mass_concentration["bpmed", "NaOH"]
+        == m.fs.bpmed.product_mass_concentration["bpmed", "HCl"]
     )
     iscale.set_scaling_factor(m.fs.equal_quality_constraint, 1)
 
 
 def initialize(m, **kwargs):
+    m.fs.ion_conc_constraint["Na_+"].deactivate()
+    m.fs.ion_conc_constraint["Na_+"].deactivate()
+    print('DOF before initialize: ', degrees_of_freedom(m))
     assert int(degrees_of_freedom(m)) == 0
     m.fs.feed.initialize()
     m.fs.dilute_feed.initialize()
     m.fs.bpmed.initialize()
     m.fs.costing.initialize()
     assert int(degrees_of_freedom(m)) == 0
-    m.fs.nacl_concentraiton.fix()
+    # switch to fixing the NaCl concentration, unfix the ion concentrations
+    m.fs.nacl_concentration.fix()
     m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Na_+"].unfix()
     m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Cl_-"].unfix()
+    m.fs.ion_conc_constraint["Na_+"].activate()
+    m.fs.ion_conc_constraint["Cl_-"].activate()
+    assert int(degrees_of_freedom(m)) == 0
     m.fs.bpmed.set_optimization_operation()
     m.fs.bpmed.nacl_recovery.unfix()
     if m.add_feed_bleed_for_acid_base and m.add_mvc == False:
@@ -398,7 +396,9 @@ def report(m):
 
 
 def solve_model(m, **kwargs):
-    solver = get_cyipopt_watertap_solver(linear_solver="ma27", max_iter=5000)
+    # Replaced get_cyipopt_watertap_solver(linear_solver="ma27", max_iter=5000) from reaktoro_pse.
+    # If convergence is poor, consider switching back to the cyipopt solver with MA27.
+    solver = get_solver(options={"max_iter": 5000})
     result = solver.solve(m, tee=True)
     report(m)
 
@@ -411,7 +411,7 @@ def report_global_state(m):
     data_dict["Global results"]["DOfs"] = int(degrees_of_freedom(m))
     data_dict["Global results"]["LCOP_HCl"] = m.fs.costing.LCOP_HCl
     data_dict["Global results"]["LCOP_NaOH"] = m.fs.costing.LCOP_NaOH
-    data_dict["Global results"]["NaCl feed"] = m.fs.nacl_concentraiton
+    data_dict["Global results"]["NaCl feed"] = m.fs.nacl_concentration
     data_dict["Global results"]["LCOW"] = m.fs.costing.LCOW
     data_dict["Global results"]["Product water flow"] = m.fs.total_product_water
     build_report_table("Global results", data_dict)
@@ -429,7 +429,7 @@ if __name__ == "__main__":
         stages=1,
         add_feed_bleed_for_acid_base=True,
         add_feed_bleed_for_brine=False,
-        add_mvc=True,
+        add_mvc=False,
     )
     initialize(m)
     # for target in [
@@ -450,7 +450,7 @@ if __name__ == "__main__":
 
     for nacl in np.linspace(360, 20, 18):
         print(f"Solving for NaCl concentration: {nacl} g/L")
-        m.fs.nacl_concentraiton.fix(nacl)
+        m.fs.nacl_concentration.fix(nacl)
         #     # m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Na_+"].fix(
         #     #     nacl * 22.98977 / (22.98977 + 35.45)
         #     # )

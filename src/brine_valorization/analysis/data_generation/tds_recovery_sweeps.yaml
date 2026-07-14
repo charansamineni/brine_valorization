@@ -1,0 +1,73 @@
+# tds_sweep:
+#   build_defaults:
+#     NaCl: 360
+#     add_mvc: False 
+#     add_feed_bleed: False
+#     stages: 1   
+#   build_loop:
+#     stages:
+#       - 1
+#       - 2        
+#       - 3
+#       - 4
+#     sweep_param_loop:
+#       nacl:
+#         type: LinearSample
+#         param: fs.nacl_concentraiton
+#         lower_limit: 360
+#         upper_limit: 20
+#         num_samples: 18
+# tds_sweep_feed_n_bleed:
+#   build_defaults:
+#     NaCl: 360
+#     add_mvc: False 
+#     add_feed_bleed_for_acid_base: True
+#     stages: 1   
+#   build_loop:
+#     stages:
+#       - 1
+#       - 2    
+#       - 3
+#     sweep_param_loop:
+#       nacl:
+#         type: LinearSample
+#         param: fs.nacl_concentraiton
+#         lower_limit: 360
+#         upper_limit: 20
+#         num_samples: 18
+tds_sweep_feed_n_bleed_mvc:
+  build_defaults:
+    NaCl: 360
+    add_mvc: True 
+    add_feed_bleed_for_acid_base: True
+    stages: 3
+  build_loop:
+    stages:
+      - 1
+      - 2    
+      - 3
+    sweep_param_loop:
+      nacl:
+        type: LinearSample
+        param: fs.nacl_concentraiton
+        lower_limit: 360
+        upper_limit: 20
+        num_samples: 18
+# map_sweep:
+#   build_defaults:
+#     add_mvc: False
+#   sweep_param_loop:
+#     recovery_map:
+#       nacl:
+#         type: LinearSample
+#         param: fs.nacl_concentraiton
+#         lower_limit: 40
+#         upper_limit: 300
+#         num_samples: 11
+#       nacl_recovery:
+#         type: LinearSample
+#         param: fs.bpmed.nacl_recovery
+#         lower_limit: 0.4
+#         upper_limit: 0.8
+#         num_samples: 9
+
