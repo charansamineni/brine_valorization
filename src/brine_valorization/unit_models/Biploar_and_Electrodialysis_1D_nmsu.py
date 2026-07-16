@@ -52,6 +52,8 @@ from idaes.core.util.math import smooth_min
 
 from idaes.core.util.exceptions import ConfigurationError, InitializationError
 
+from idaes.core.util.model_statistics import (degrees_of_freedom)
+
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 from idaes.core.util.constants import Constants
@@ -3000,12 +3002,18 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 self.eq_nonelec_mono_cem_flux[t, x, p, j].deactivate()
                 self.nonelec_mono_cem_flux[t, x, p, j].fix(0)
 
-        for t, x, p, j in self.eq_elec_migration_bpem_flux:
-            if ("bpem", j) in self.solute_diffusivity_membrane and value(
-                self.solute_diffusivity_membrane["bpem", j]
+        for t, x, p, j in self.eq_elec_migration_bpem_flux: # if you compare this with aem/cem, it
+            if ("bpem", j) in self.solute_diffusivity_membrane and value( # should be using trans_number
+                self.solute_diffusivity_membrane["bpem", j] # so it's wrong physics/typo?
             ) == 0:
                 self.eq_elec_migration_bpem_flux[t, x, p, j].deactivate()
                 self.elec_migration_bpem_flux[t, x, p, j].fix(0)
+        # for t, x, p, j in self.eq_elec_migration_bpem_flux:
+        #     if ("bpem", j) in self.ion_trans_number_membrane and value(
+        #         self.ion_trans_number_membrane["bpem", j]
+        #     ) == 0:
+        #         self.eq_elec_migration_bpem_flux[t, x, p, j].deactivate()
+        #         self.elec_migration_bpem_flux[t, x, p, j].fix(0)
 
         for t, x, p, j in self.eq_mass_transfer_term_basate:
             gd = value(self.generation_aem_flux[t, x, p, j]) == 0
@@ -3273,6 +3281,39 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
         # ---------------------------------------------------------------------
         if not ignore_dof:
             check_dof(self, fail_flag=fail_on_warning, logger=init_log)
+
+
+# ## added this 7/16 for debugging!!
+#         print("========== BEFORE STEP 4 ==========")
+#         print("DOF:", degrees_of_freedom(self))
+
+#         x = self.diluate.length_domain.first()
+
+#         print("Voltage drop:", value(self.voltage_membrane_drop[0, x]))
+#         print("Electric field:", value(self.elec_field_non_dim[0, x]))
+#         print("Flux splitting:", value(self.flux_splitting[0, x]))
+#         print("Voltage fixed:", self.voltage_membrane_drop[0, x].fixed)
+#         print("E field fixed:", self.elec_field_non_dim[0, x].fixed)
+#         print("Flux fixed:", self.flux_splitting[0, x].fixed)
+#         from idaes.core.util.model_statistics import unfixed_variables_generator
+
+#         print("---- Candidate DOF variables ----")
+#         for v in unfixed_variables_generator(self):
+#             print(v.name)
+#         from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+
+#         dt = DiagnosticsToolbox(self)
+#         dt.report_structural_issues()
+
+
+#         print("BPMED DOF =", degrees_of_freedom(self))
+#         print("diluate DOF =", degrees_of_freedom(self.diluate))
+#         print("basate DOF =", degrees_of_freedom(self.basate))
+#         print("acidate DOF =", degrees_of_freedom(self.acidate))
+
+#         raise RuntimeError("Stopping before Step 4")
+
+######
 
         # interval_initializer(self)
         # Solve unit
@@ -3991,8 +4032,9 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 * iscale.get_scaling_factor(self.dens_mass) ** -1
                 * iscale.get_scaling_factor(self.diffus_mass) ** -1
             )
+    #        iscale.set_scaling_factor(self.eq_Sc, sf) THIS WAS WRONG!!
             iscale.set_scaling_factor(self.N_Sc, sf)
-            iscale.constraint_scaling_transform(self.eq_N_Sc, sf)
+            iscale.constraint_scaling_transform(self.eq_Sc, sf)
         if hasattr(self, "N_Sh") and (
             iscale.get_scaling_factor(self.N_Sh, warning=True) is None
         ):
@@ -4002,7 +4044,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 * iscale.get_scaling_factor(self.N_Sc) ** 0.33
             )
             iscale.set_scaling_factor(self.N_Sh, sf)
-            iscale.constraint_scaling_transform(self.eq_N_Sh, sf)
+            iscale.constraint_scaling_transform(self.eq_Sh, sf) #corrected this from eq_N_Sh
         if hasattr(self, "friction_factor") and (
             iscale.get_scaling_factor(self.friction_factor, warning=True) is None
         ):
