@@ -1,5 +1,6 @@
 # Predicts precipitated salts as a function of composition and evaporation percent
 # Follows reaktoro_enabled_watertap's src/reaktoro_enabled_watertap/flowsheets/property_comparator/watertap_prop_comparison.py
+import os
 
 import pandas as pd
 from pyomo.environ import (
@@ -236,7 +237,8 @@ if __name__ == "__main__":
     }
     # Added Halite, Sylvite, Sulfates, Carnallite based on paper - can add others
     minerals = ["Halite", "Gypsum", "Calcite", "Sylvite", "Carnallite", "Anhydrite"]
-    save_folder = "src/brine_valorization/analysis/reaktoro_sweep/output/"
+    save_folder = f"../output/sweep_evaporation/"
+    os.makedirs(save_folder, exist_ok=True)
 
     m = build_model(conc_g_per_L, temperature=298.15, pressure=101325, pH=7.0)
     m = add_precipitation_block(m, minerals, charge_balance_ion="Cl_-")
