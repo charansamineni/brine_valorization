@@ -146,13 +146,22 @@ def build_and_initialize(NaCl):
     m.fs.bpmed.report()
     assert degrees_of_freedom(m) == 0
 
+# solve here --> deactivate Objective function here (unless obj is giving 0 dof)
+    solver = get_solver()
+
+    print("Solving fixed-operation model...")
+    result = solver.solve(m, tee=True)
+    print(result.solver.termination_condition)
 
     m.fs.bpmed.set_optimization_operation()
-    m.fs.bpmed.bpmed[0].electrical_stage_num.unfix()        # unfixing electrical stage for more flexibility- but it doesn't change from 1 for the different cases
-    last_good, first_fail = find_recovery_limit(m)
+    # can print dof, can bring back Obj function
+ #   m.fs.bpmed.bpmed[0].electrical_stage_num.unfix() 
+      # unfixing electrical stage for more flexibility- but it doesn't change from 1 for the different cases
+      # idaes model statistics --> can check electrical_stage_num to see if it's fixed or unfixed
+ #   last_good, first_fail = find_recovery_limit(m)
     return m
 
-def find_recovery_limit(m, r_start=0.74, r_end=0.75, r_step=0.001, scan_max_iter=3000):
+def find_recovery_limit(m, r_start=0.745, r_end=0.749, r_step=0.001, scan_max_iter=7000):
     solver = get_solver()
     solver.options['max_iter'] = scan_max_iter
     solver.options['tol'] = 1e-6
@@ -181,40 +190,132 @@ def find_recovery_limit(m, r_start=0.74, r_end=0.75, r_step=0.001, scan_max_iter
 
 
 def main():
-    nacl_feed_vals = [150, 70]  # g/L
-    nacl_recovery_vals = np.linspace(50, 75, 6)
-#    nacl_recovery_vals = [0.7] # fractions
+ #   nacl_feed_vals = [150, 70]  # g/L
+    nacl_feed = 150
+#    nacl_recovery_vals = np.linspace(.70, .80, 6)
+    nacl_recovery_val = 0.7 # fractions
     solver = get_solver()
-    solver.options['max_iter'] = 12000
+    solver.options['max_iter'] = 4000
     solver.options['tol'] = 1e-6
 
-    results = []
-    for nacl_feed in nacl_feed_vals:
-        print(f"\n=== Building and initializing for NaCl feed = {nacl_feed} g/L ===")
-        m = build_and_initialize(nacl_feed * pyunits.g / pyunits.L)
+    m = build_and_initialize(nacl_feed * pyunits.g / pyunits.L)
 
-        for r in nacl_recovery_vals:
-            m.fs.bpmed.nacl_recovery.fix(r)
+    m.fs.bpmed.nacl_recovery.fix(nacl_recovery_val)
+    from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+    
+    result = solver.solve(m, tee=True)
+    term = result.solver.termination_condition
 
-            print(f"NaCl feed = {nacl_feed} g/L, nacl_recovery = {r}%, DOF = {degrees_of_freedom(m)}")
-            result = solver.solve(m, tee=True)
+    print(term)
+    dt = DiagnosticsToolbox(m)
+    dt.report_numerical_issues()
+    dt.display_variables_at_or_outside_bounds()
 
-            m.fs.dilute_feed.report()
-            m.fs.bpmed.report()
-            assert_optimal_termination(result)
 
-            results.append(
-                {
-                    "NaCl_feed_gL": nacl_feed,
-                    "nacl_recovery_pct": r,
-                    "LCOP": value(m.fs.costing.LCOP),
-                    "SEC": value(m.fs.costing.specific_energy_consumption),
-                }
-            )
+# SECOND function code!
+    # for nacl_feed in nacl_feed_vals:
+    #     m = build_and_initialize(nacl_feed * pyunits.g / pyunits.L)
+    #     results = []
 
-    print("\n=== Summary ===")
-    for row in results:
-        print(row)
+    #     last_good = None
+    #     first_fail = None
+
+    #     for r in nacl_recovery_vals:
+
+    #         r = float(r)   # cleaner printing
+
+    #         print(f"\n{'='*60}")
+    #         print(f"Trying NaCl recovery = {r:.3f}")
+    #         print(f"{'='*60}")
+
+    #         m.fs.bpmed.nacl_recovery.fix(r)
+
+    #         try:
+    #             result = solver.solve(m, tee=True)
+    #             term = result.solver.termination_condition
+
+    #         except Exception as e:
+    #             term = f"Exception: {e}"
+
+    #         if term == TerminationCondition.optimal:
+
+    #             last_good = r
+
+    #             LCOP = value(m.fs.costing.LCOP)
+    #             SEC = value(m.fs.costing.specific_energy_consumption)
+
+    #             print(f"✓ Converged")
+    #             print(f"   LCOP = {LCOP:.4f}")
+    #             print(f"   SEC  = {SEC:.4f}")
+
+    #         else:
+
+    #             if first_fail is None:
+    #                 first_fail = r
+
+    #             LCOP = None
+    #             SEC = None
+
+    #             print(f"✗ Failed")
+    #             print(f"   Termination = {term}")
+
+    #         results.append({
+    #             "Recovery": r,
+    #             "Termination": str(term),
+    #             "LCOP": LCOP,
+    #             "SEC": SEC,
+    #         })
+
+
+    #     print("\n")
+    #     print("="*70)
+    #     print("Recovery Sweep Summary")
+    #     print("="*70)
+
+    #     for row in results:
+
+    #         print(
+    #             f"Recovery = {row['Recovery']:.3f} | "
+    #             f"{row['Termination']:<18} | "
+    #             f"LCOP = {row['LCOP']} | "
+    #             f"SEC = {row['SEC']}"
+    #         )
+
+    #     print("\n")
+    #     print("="*70)
+    #     print(f"Last successful recovery : {last_good}")
+    #     print(f"First failed recovery    : {first_fail}")
+    #     print("="*70)
+
+
+
+
+
+# FIRST Function code
+
+    # for nacl_feed in nacl_feed_vals:
+    #     print(f"\n=== Building and initializing for NaCl feed = {nacl_feed} g/L ===")
+    #     m = build_and_initialize(nacl_feed * pyunits.g / pyunits.L)
+
+    #     for r in nacl_recovery_vals:
+    #         m.fs.bpmed.nacl_recovery.fix(r)
+
+    #         print(f"NaCl feed = {nacl_feed} g/L, nacl_recovery = {r}%, DOF = {degrees_of_freedom(m)}")
+    #         result = solver.solve(m, tee=True)
+
+    #         m.fs.dilute_feed.report()
+    #         m.fs.bpmed.report()
+    #         assert_optimal_termination(result)
+
+    #         results.append(
+    #             {
+    #                 "NaCl_feed_gL": nacl_feed,
+    #                 "nacl_recovery_pct": r,
+    #                 "LCOP": value(m.fs.costing.LCOP),
+    #                 "SEC": value(m.fs.costing.specific_energy_consumption),
+    #             }
+    #         )
+
 
  
 if __name__ == "__main__":
