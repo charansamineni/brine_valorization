@@ -1899,7 +1899,6 @@ class BPMEDData(WaterTapFlowsheetBlockData):
                 mixer_names.append("Brine mixer")
             if self.config.add_mvc_concentrators and self.config.recycle_mvc_distillate:
                 mixer_inlets.append("mvr_distillate")
-
             for mixer, mixer_name in zip(
                 mixers,
                 mixer_names,

@@ -2027,7 +2027,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 )
                 * (self.cell_width * self.shadow_factor)
                 * self.cell_triplet_num
-                / self.electrical_stage_num
+                / self.electrical_stage_num # this shouldn't be there
             )
 
         # Add constraints for mass transfer terms (base channel of the bipolar membrane)
@@ -2050,6 +2050,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 )
                 * (self.cell_width * self.shadow_factor)
                 * self.cell_triplet_num
+                
             )
 
         # Add constraints for mass transfer terms (acid channel of the bipolar membrane)
