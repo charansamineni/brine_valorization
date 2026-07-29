@@ -1053,12 +1053,19 @@ class BPMEDData(WaterTapFlowsheetBlockData):
             bpmed.channel_height["acidate"].fix(0.00038)
             bpmed.channel_height["basate"].setlb(0.00015)
             bpmed.channel_height["acidate"].setlb(0.00015)
-            bpmed.velocity_diluate[0, 0].setlb(0.05)
-            bpmed.velocity_acidate[0, 0].setlb(0.01)
-            bpmed.velocity_basate[0, 0].setlb(0.01)
-            bpmed.velocity_diluate[0, 0].setub(0.25)
-            bpmed.velocity_acidate[0, 0].setub(0.25)
-            bpmed.velocity_basate[0, 0].setub(0.25)
+            # bpmed.velocity_diluate[0, 0].setlb(0.05)
+            # bpmed.velocity_acidate[0, 0].setlb(0.01)
+            # bpmed.velocity_basate[0, 0].setlb(0.01)
+            # setting lb and ub for ALL velocity values through the channel length
+            [v.setlb(0.05) for v in bpmed.velocity_diluate.values()]
+            [v.setlb(0.01) for v in bpmed.velocity_acidate.values()]
+            [v.setlb(0.01) for v in bpmed.velocity_basate.values()]
+            # bpmed.velocity_diluate[0, 0].setub(0.25)
+            # bpmed.velocity_acidate[0, 0].setub(0.25)
+            # bpmed.velocity_basate[0, 0].setub(0.25)
+            [v.setub(0.25) for v in bpmed.velocity_diluate.values()]
+            [v.setub(0.25) for v in bpmed.velocity_acidate.values()]
+            [v.setub(0.25) for v in bpmed.velocity_basate.values()]
 
             bpmed.channel_height["diluate"].fix(0.00038)
             if bpmed.find_component("equal_acidate_velocity") is None:
