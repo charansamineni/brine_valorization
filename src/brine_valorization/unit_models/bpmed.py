@@ -1057,7 +1057,7 @@ class BPMEDData(WaterTapFlowsheetBlockData):
             # bpmed.velocity_acidate[0, 0].setlb(0.01)
             # bpmed.velocity_basate[0, 0].setlb(0.01)
             # setting lb and ub for ALL velocity values through the channel length
-            [v.setlb(0.05) for v in bpmed.velocity_diluate.values()]
+            [v.setlb(0.01) for v in bpmed.velocity_diluate.values()]
             [v.setlb(0.01) for v in bpmed.velocity_acidate.values()]
             [v.setlb(0.01) for v in bpmed.velocity_basate.values()]
             # bpmed.velocity_diluate[0, 0].setub(0.25)
@@ -1169,7 +1169,7 @@ class BPMEDData(WaterTapFlowsheetBlockData):
             bpmed.voltage_applied[0].fix(150)
 #            bpmed.voltage_applied.setub(800)
             # upping bound on voltage applied
-            bpmed.voltage_applied.setub(900)
+            bpmed.voltage_applied.setub(1200)
             bpmed.voltage_applied.setlb(50)
             bpmed.membrane_fixed_charge.fix(5e3)
             bpmed.conc_water.fix(50 * 1e3)
@@ -1207,17 +1207,23 @@ class BPMEDData(WaterTapFlowsheetBlockData):
             bpmed.cell_triplet_num.setub(1000)
             bpmed.electrical_stage_num.fix()
             bpmed.voltage_applied.unfix()
-            bpmed.voltage_applied.setub(800)
+            bpmed.voltage_applied.setub(1200)
             bpmed.voltage_applied.setlb(50)
             bpmed.cell_length.unfix()
             bpmed.cell_length.setub(100)
             bpmed.cell_width.unfix()
-            bpmed.velocity_acidate[0, 0].setlb(0.01)
-            bpmed.velocity_basate[0, 0].setlb(0.01)
-            bpmed.velocity_diluate[0, 0].setlb(0.05)
-            bpmed.velocity_diluate[0, 0].setub(0.5)
-            bpmed.velocity_acidate[0, 0].setub(0.5)
-            bpmed.velocity_basate[0, 0].setub(0.5)
+            # bpmed.velocity_acidate[0, 0].setlb(0.01)
+            # bpmed.velocity_basate[0, 0].setlb(0.01)
+            # bpmed.velocity_diluate[0, 0].setlb(0.05)
+            [v.setlb(0.01) for v in bpmed.velocity_diluate.values()]
+            [v.setlb(0.01) for v in bpmed.velocity_acidate.values()]
+            [v.setlb(0.01) for v in bpmed.velocity_basate.values()]
+            # bpmed.velocity_diluate[0, 0].setub(0.5)
+            # bpmed.velocity_acidate[0, 0].setub(0.5)
+            # bpmed.velocity_basate[0, 0].setub(0.5)
+            [v.setub(0.5) for v in bpmed.velocity_diluate.values()]
+            [v.setub(0.5) for v in bpmed.velocity_acidate.values()]
+            [v.setub(0.5) for v in bpmed.velocity_basate.values()]
         self.nacl_recovery.unfix()
         self.low_tds_splitter.split_fraction[0, "acidate"].unfix()
         if self.config.add_feed_bleed_for_acid_base:
