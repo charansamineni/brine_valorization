@@ -1167,7 +1167,9 @@ class BPMEDData(WaterTapFlowsheetBlockData):
             bpmed.current_utilization.fix(1)
             bpmed.electrodes_resistance.fix(0.01)
             bpmed.voltage_applied[0].fix(150)
-            bpmed.voltage_applied.setub(800)
+#            bpmed.voltage_applied.setub(800)
+            # upping bound on voltage applied
+            bpmed.voltage_applied.setub(900)
             bpmed.voltage_applied.setlb(50)
             bpmed.membrane_fixed_charge.fix(5e3)
             bpmed.conc_water.fix(50 * 1e3)
