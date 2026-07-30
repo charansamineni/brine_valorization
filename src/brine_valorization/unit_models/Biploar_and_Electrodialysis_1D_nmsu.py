@@ -907,6 +907,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
             self.flowsheet().time,
             self.diluate.length_domain,
             initialize=1e3,
+    #        bounds=(1e-8, 1e6), #original bounds
             bounds=(1e-8, 1e6),
             units=pyunits.mole * pyunits.meter**-3,
             doc="Salt concentration on the base channel of the bipolar membrane",
@@ -915,7 +916,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
             self.flowsheet().time,
             self.diluate.length_domain,
             initialize=1e3,
-            bounds=(1e-6, 1e4),
+            bounds=(1e-6, 1e4), #original bounds
             units=pyunits.mole * pyunits.meter**-3,
             doc="Salt concentration on the acid channel of the bipolar membrane",
         )
@@ -923,7 +924,7 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
             self.flowsheet().time,
             self.diluate.length_domain,
             initialize=1e3,
-            bounds=(1e-6, 1e4),
+            bounds=(1e-6, 1e4), #original bounds
             units=pyunits.mole * pyunits.meter**-3,
             doc="Salt concentration on the diluate channel ",
         )
@@ -2027,7 +2028,6 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
                 )
                 * (self.cell_width * self.shadow_factor)
                 * self.cell_triplet_num
-                / self.electrical_stage_num # this shouldn't be there
             )
 
         # Add constraints for mass transfer terms (base channel of the bipolar membrane)
