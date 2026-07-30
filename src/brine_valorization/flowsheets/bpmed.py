@@ -158,7 +158,8 @@ def get_constraint_vars(con):
 
 def build_bpmed(
     NaCl=40, #g/L
-    stages=1,
+#    stages=1,
+    stages=2,
     add_feed_bleed_for_acid_base=True,
     add_feed_bleed_for_brine=True,
     add_mvc=False,
@@ -317,7 +318,7 @@ def initialize(m, **kwargs):
         m.fs.bpmed.acidate_mvc.recovery.setlb(0.25)
         m.fs.bpmed.basate_mvc.recovery.setlb(0.25)
     m.fs.bpmed.nacl_recovery.unfix()
-    m.fs.bpmed.nacl_recovery.setub(0.75)
+    m.fs.bpmed.nacl_recovery.setub(0.85)
 
     solve_model(m)
     # check_jac(m)
@@ -426,7 +427,8 @@ def show_fixed_vars(m):
 if __name__ == "__main__":
     m = build_bpmed(
         NaCl=360,
-        stages=1,
+    #    stages=1,
+        stages=2
         add_feed_bleed_for_acid_base=True,
         add_feed_bleed_for_brine=False,
         add_mvc=False,
