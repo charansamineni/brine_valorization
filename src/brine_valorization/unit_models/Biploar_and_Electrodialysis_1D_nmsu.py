@@ -694,6 +694,17 @@ class Bipolar_and_Electrodialysis1DData(InitializationMixin, UnitModelBlockData)
             doc='The prosity of spacer in the ED channels. This is also referred to elsewhere as "void fraction" or "volume parameters"',
         )
 
+        self.bipolar_membrane_area = Var(
+            initialize=100,
+            units=pyunits.m**2,
+            doc="The area of the membrane for electrodialysis",
+        )
+
+        @self.Constraint(doc="Constraint to calculate the membrane area based on the cell width, length, and number of cell triplets")
+        def membrane_area_constraint(b):
+            return b.bipolar_membrane_area == b.cell_width * b.cell_length * b.cell_triplet_num
+
+
         # Material and Operational properties
         self.membrane_thickness = Var(
             self.membrane_set,
