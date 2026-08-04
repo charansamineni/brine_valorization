@@ -1433,8 +1433,14 @@ class BPMEDData(WaterTapFlowsheetBlockData):
                 1 / 2100,
             )
             iscale.set_scaling_factor(
-                cp.bipolar_electrodialysis_costing.membrane_capital_cost,
-                1 / 100,
+                cp.bipolar_electrodialysis_costing.bipolar_membrane_cost,
+                1 / 1000,
+            )
+            iscale.set_scaling_factor(
+                cp.bipolar_electrodialysis_costing.aem_cost, 1/100
+            )
+            iscale.set_scaling_factor(
+                cp.bipolar_electrodialysis_costing.cem_cost, 1/100
             )
             iscale.set_scaling_factor(
                 cp.bipolar_electrodialysis_costing.factor_membrane_replacement,
@@ -1470,7 +1476,9 @@ class BPMEDData(WaterTapFlowsheetBlockData):
                     bpmed.costing.capital_cost_constraint,
                     [
                         cp.bipolar_electrodialysis_costing.stack_electrode_capital_cost,
-                        cp.bipolar_electrodialysis_costing.membrane_capital_cost,
+                        cp.bipolar_electrodialysis_costing.bipolar_membrane_cost,
+                        cp.bipolar_electrodialysis_costing.aem_cost,
+                        cp.bipolar_electrodialysis_costing.cem_cost,
                         bpmed.costing.capital_cost_rectifier,
                         bpmed.cell_triplet_num,
                         bpmed.cell_width,
@@ -1482,7 +1490,9 @@ class BPMEDData(WaterTapFlowsheetBlockData):
                     bpmed.costing.fixed_operating_cost_constraint,
                     [
                         cp.bipolar_electrodialysis_costing.stack_electrode_capital_cost,
-                        cp.bipolar_electrodialysis_costing.membrane_capital_cost,
+                        cp.bipolar_electrodialysis_costing.bipolar_membrane_cost,
+                        cp.bipolar_electrodialysis_costing.aem_cost,
+                        cp.bipolar_electrodialysis_costing.cem_cost,
                         cp.bipolar_electrodialysis_costing.factor_stack_electrode_replacement,
                         cp.bipolar_electrodialysis_costing.factor_membrane_replacement,
                         bpmed.cell_triplet_num,

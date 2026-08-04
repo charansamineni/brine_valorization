@@ -21,26 +21,41 @@ from watertap.costing.util import (
 
 def build_bipolar_electrodialysis_cost_param_block(blk):
     # The following costing itemization and values are referenced to "Desalination 452 (2019) 265–278"
-    blk.membrane_capital_cost = pyo.Var(
-        initialize=548.776654411,
-        doc="Membrane and capital costs in [US$/m^2-membrane-area]",
+    blk.bipolar_membrane_cost = pyo.Var(
+        initialize=1300,  # Bipolar membrane cost according to https://doi.org/10.1038/s41598-024-61699-8 table 4
+        doc="Bipolar membrane [US$/m^2-membrane-area]",
+        units=pyo.units.USD_2018 / (pyo.units.meter**2),
+    )
+
+    blk.aem_cost = pyo.Var(
+        initialize=145.0,  # AEM cost according to https://doi.org/10.1038/s41598-024-61699-8 table 4
+        doc="AEM membrane cost in [US$/m^2-membrane-area]",
+        units=pyo.units.USD_2018 / (pyo.units.meter**2),
+    )
+
+    blk.cem_cost = pyo.Var(
+        initialize=145.0,  # CEM cost according to https://doi.org/10.1038/s41598-024-61699-8 table 4
+        doc="CEM membrane cost in [US$/m^2-membrane-area]",
         units=pyo.units.USD_2018 / (pyo.units.meter**2),
     )
 
     blk.factor_membrane_replacement = pyo.Var(
-        initialize=0.3,
+        # Membrane life is set 3 years based on https://doi.org/10.1021/acs.iecr.4c04364?urlappend=%3Fref%3DPDF&jav=VoR&rel=cite-as
+        initialize=0.33,
         doc="Membrane and equipment (other stack components) housing replacement factor, equal to 1/lifetime.",
         units=pyo.units.year**-1,
     )
 
     blk.stack_electrode_capital_cost = pyo.Var(
-        initialize=2100,
+        # MMO coated Ti electrode cost according to https://alltialloys.com/blog-posts/mmo-expanded-titanium-anode-mesh (150-400 $/m2)
+        initialize=400,
         doc="Electrode cost in [US$/m^2-electrode-area] ",
         units=pyo.units.USD_2018 / (pyo.units.meter**2),
     )
 
     blk.factor_stack_electrode_replacement = pyo.Var(
-        initialize=0.2,
+        # Electrode life is set to 3 years https://plmesh.com/how-long-do-mmo-titanium-electrodes-last/
+        initialize=0.33,
         doc="Stack and electrode replacement factor, equal to 1/lifetime.",
         units=pyo.units.year**-1,
     )
@@ -119,18 +134,18 @@ def cost_bipolar_electrodialysis_stack(blk):
         make_capital_cost_var(blk)
     make_fixed_operating_cost_var(blk)
     blk.costing_package.add_cost_factor(blk, "TIC")
+
     if blk.find_component("capital_cost_rectifier") is not None:
         blk.capital_cost_constraint = pyo.Constraint(
             expr=blk.capital_cost
             == blk.cost_factor
             * (
                 pyo.units.convert(
-                    blk.costing_package.bipolar_electrodialysis_costing.membrane_capital_cost
+                    blk.unit_model.bipolar_membrane_area  # Area of bipolar membrane, AEM, and CEM are equal
                     * (
-                        4
-                        * blk.unit_model.cell_triplet_num
-                        * blk.unit_model.cell_width
-                        * blk.unit_model.cell_length
+                        blk.costing_package.bipolar_electrodialysis_costing.bipolar_membrane_cost
+                        + blk.costing_package.bipolar_electrodialysis_costing.aem_cost
+                        + blk.costing_package.bipolar_electrodialysis_costing.cem_cost
                     )
                     + blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost
                     * (
@@ -149,14 +164,13 @@ def cost_bipolar_electrodialysis_stack(blk):
             expr=blk.capital_cost
             == blk.cost_factor
             * pyo.units.convert(
-                blk.costing_package.bipolar_electrodialysis_costing.membrane_capital_cost
-                * (
-                    4
-                    * blk.unit_model.cell_triplet_num
-                    * blk.unit_model.cell_width
-                    * blk.unit_model.cell_length
-                )
-                + blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost
+                blk.unit_model.bipolar_membrane_area,
+                *(
+                    blk.costing_package.bipolar_electrodialysis_costing.bipolar_membrane_cost
+                    + blk.costing_package.bipolar_electrodialysis_costing.aem_cost
+                    + blk.costing_package.bipolar_electrodialysis_costing.cem_cost
+                ),
+                +blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost
                 * (
                     2
                     * blk.unit_model.cell_width
@@ -170,12 +184,11 @@ def cost_bipolar_electrodialysis_stack(blk):
         expr=blk.fixed_operating_cost
         == pyo.units.convert(
             blk.costing_package.bipolar_electrodialysis_costing.factor_membrane_replacement
-            * blk.costing_package.bipolar_electrodialysis_costing.membrane_capital_cost
+            * blk.unit_model.bipolar_membrane_area
             * (
-                4
-                * blk.unit_model.cell_triplet_num
-                * blk.unit_model.cell_width
-                * blk.unit_model.cell_length
+                blk.costing_package.bipolar_electrodialysis_costing.bipolar_membrane_cost
+                + blk.costing_package.bipolar_electrodialysis_costing.aem_cost
+                + blk.costing_package.bipolar_electrodialysis_costing.cem_cost
             )
             + blk.costing_package.bipolar_electrodialysis_costing.factor_stack_electrode_replacement
             * blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost

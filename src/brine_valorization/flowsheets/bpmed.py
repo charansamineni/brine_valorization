@@ -157,9 +157,8 @@ def get_constraint_vars(con):
 
 
 def build_bpmed(
-    NaCl=40, #g/L
-#    stages=1,
-    stages=2,
+    NaCl=40,  # g/L
+    stages=1,
     add_feed_bleed_for_acid_base=True,
     add_feed_bleed_for_brine=True,
     add_mvc=False,
@@ -285,7 +284,7 @@ def add_equal_quality_constraints(m):
 def initialize(m, **kwargs):
     m.fs.ion_conc_constraint["Na_+"].deactivate()
     m.fs.ion_conc_constraint["Na_+"].deactivate()
-    print('DOF before initialize: ', degrees_of_freedom(m))
+    print("DOF before initialize: ", degrees_of_freedom(m))
     assert int(degrees_of_freedom(m)) == 0
     m.fs.feed.initialize()
     m.fs.dilute_feed.initialize()
@@ -434,6 +433,10 @@ if __name__ == "__main__":
         add_mvc=False,
     )
     initialize(m)
+    solve_model(m)
+
+    m.fs.costing.pprint()
+
     # for target in [
     #     0.011,
     #     0.012,
@@ -448,16 +451,15 @@ if __name__ == "__main__":
     # ]:
     #     print(f"Solving for target: {target}")
     #     m.fs.bpmed.activate_product_quality_constraints(target)
-    #     solve_model(m)
 
-    for nacl in np.linspace(360, 20, 18):
-        print(f"Solving for NaCl concentration: {nacl} g/L")
-        m.fs.nacl_concentration.fix(nacl)
-        #     # m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Na_+"].fix(
-        #     #     nacl * 22.98977 / (22.98977 + 35.45)
-        #     # )
-        #     # m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Cl_-"].fix(
-        #     #     nacl * 35.45 / (22.98977 + 35.45)
-        #     # )
-        solve_model(m)
+    # for nacl in np.linspace(360, 20, 18):
+    #     print(f"Solving for NaCl concentration: {nacl} g/L")
+    #     m.fs.nacl_concentration.fix(nacl)
+    #     #     # m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Na_+"].fix(
+    #     #     #     nacl * 22.98977 / (22.98977 + 35.45)
+    #     #     # )
+    #     #     # m.fs.feed.feed.properties[0].conc_mass_phase_comp["Liq", "Cl_-"].fix(
+    #     #     #     nacl * 35.45 / (22.98977 + 35.45)
+    #     #     # )
+    #     solve_model(m)
     # #     # check_jac(m)
