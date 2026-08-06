@@ -92,7 +92,7 @@ def add_normalized_costs(df, product="HCl"):
     return df
  
  
-def plot_lcop(df, product, feed):
+def plot_lcop(df, product, feed, membrane_condition=False):
 
     df = df.sort_values("NaCl Recovery")
 
@@ -101,6 +101,7 @@ def plot_lcop(df, product, feed):
     opex = df["opex_intensity"]
     total = df["LCOP"]
     voltage_applied = df["Voltage Applied"]
+    membrane_area = df["membrane area"]
 
     # Calculate bar width based on average recovery step size
     if len(x) > 1:
@@ -151,29 +152,48 @@ def plot_lcop(df, product, feed):
     #     label="Total LCOP",
     # )
 
-# voltage on second y axis
-    ax2.plot(
-        x,
-        voltage_applied,
-        color = "black",
-        linewidth = 2,
-        label="Applied Voltage",
-    )
+    if membrane_condition:
+        # membrane area on second y axis
+        ax2.plot(
+            x,
+            membrane_area,
+            color="black",
+            linewidth=2,
+            label="Membrane Area",
+        )
+        y_label_2 = "Membrane Area (m^2)"
+        legend_position = (0.0, 1.0)
+
+    else:
+        # voltage on second y axis
+        ax2.plot(
+            x,
+            voltage_applied,
+            color = "black",
+            linewidth = 2,
+            label="Applied Voltage",
+        )
+        y_label_2 = "Applied Voltage (V)"
+        ax2.set_ylim(
+            voltage_applied.min() * 0,
+            voltage_applied.max() * 1.05,
+        )
+        legend_position = (0.0, 0.9)
+
+
+
 
     # 5. Formatting
     ax.set_xlabel("NaCl Recovery (-)", fontsize=12, fontweight="bold", labelpad=10)
     ax.set_ylabel(f"LCOP ($/kg {product})", fontsize=12, fontweight="bold", labelpad=10)
     ax2.set_ylabel(
-    "Applied Voltage (V)",
+    y_label_2,
     fontsize=12,
     fontweight="bold",
 #    color="red",
     )
     ax2.tick_params(axis="y", colors="black")
-    ax2.set_ylim(
-    voltage_applied.min() * 0,
-    voltage_applied.max() * 1.05,
-)
+
 
     ax.set_title(
         f"Levelized Cost of {product} Product vs. NaCl Recovery, {feed} g/L feed",
@@ -193,7 +213,7 @@ def plot_lcop(df, product, feed):
         edgecolor="none",
         fontsize=11,
         loc="upper left",
-        bbox_to_anchor=(0.0, 0.9),
+        bbox_to_anchor=legend_position,
     )
     ax.grid(axis="y", linestyle="--", alpha=0.7)
 
@@ -213,25 +233,26 @@ if __name__ == "__main__":
         (150, h5_file_150gL),
     ]
 
+    replace_voltage_with_membrane_area = True
     for feed, filename in cases:
         df = load_h5_results(filename)
 
         # HCl:
         df_hcl = add_normalized_costs(df, product = "HCl")
-        fig = plot_lcop(df_hcl, "HCl", feed)
+        fig = plot_lcop(df_hcl, "HCl", feed, membrane_condition=True)
 
         fig.savefig(
-            f"LCOP_HCl_{feed}gL_plot_{timestamp}.png",
+            f"LCOP_HCl_{feed}gL_MembraneArea_{timestamp}.png",
             dpi=300,
             bbox_inches="tight",
         )
 
         #NaOH:
         df_naoh = add_normalized_costs(df, product = "NaOH")
-        fig = plot_lcop(df_naoh, "NaOH", feed)
+        fig = plot_lcop(df_naoh, "NaOH", feed, membrane_condition=True)
 
         fig.savefig(
-            f"LCOP_NaOH_{feed}gL_plot_{timestamp}.png",
+            f"LCOP_NaOH_{feed}gL_MembraneArea_{timestamp}.png",
             dpi=300,
             bbox_inches="tight",
         )        
