@@ -10,7 +10,7 @@ from sympy import product
 # fs.costing.total_capital_cost*fs.costing.capital_recovery_factor 
 # + fs.costing.total_operating_cost) / (31557600.000000004*(s/a)*fs.total_product_water*fs.costing.utilization_factor)
 
-
+# Aug 6th LCOP plots with voltage and membrane area on secondary y-axis with these h5 files below
 h5_file_70gL = "voltageub1200_recovery_sweep_70gL_08-06_0930.h5"
 h5_file_150gL = "voltageub1200_recovery_sweep_150gL_08-06_0930.h5"
 
