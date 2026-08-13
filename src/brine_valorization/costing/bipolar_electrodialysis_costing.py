@@ -164,13 +164,13 @@ def cost_bipolar_electrodialysis_stack(blk):
             expr=blk.capital_cost
             == blk.cost_factor
             * pyo.units.convert(
-                blk.unit_model.bipolar_membrane_area,
-                *(
+                blk.unit_model.bipolar_membrane_area
+                * (
                     blk.costing_package.bipolar_electrodialysis_costing.bipolar_membrane_cost
                     + blk.costing_package.bipolar_electrodialysis_costing.aem_cost
                     + blk.costing_package.bipolar_electrodialysis_costing.cem_cost
-                ),
-                +blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost
+                )
+                + blk.costing_package.bipolar_electrodialysis_costing.stack_electrode_capital_cost
                 * (
                     2
                     * blk.unit_model.cell_width
